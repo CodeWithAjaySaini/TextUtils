@@ -1,63 +1,69 @@
-# I have created this file - Harry
+#For Convert text to PDf
+from fpdf import FPDF
+import webbrowser
+
+##........................
+
 from django.http import HttpResponse
 from django.shortcuts import render
 
-
-def index(request):
-    return render(request, 'index.html')
-
+def home(request):
+    return render(request, 'home.html') 
 
 def analyze(request):
-    #Get the text
-    djtext = request.POST.get('text', 'default')
-
-    # Check checkbox values
-    removepunc = request.POST.get('removepunc', 'off')
-    fullcaps = request.POST.get('fullcaps', 'off')
-    newlineremover = request.POST.get('newlineremover', 'off')
-    extraspaceremover = request.POST.get('extraspaceremover', 'off')
-    numberremover = request.POST.get('numberremover','off')
-
-    #Check which checkbox is on
-    if removepunc == "on":
-        punctuations = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
-        analyzed = ""
+    #Get the Text ...........................
+    djtext=request.POST.get('text','off')
+    #........................................
+    
+    #Check remove Punc .........
+    removepunc = request.POST.get('removepunc','off')
+    capon = request.POST.get('capon','off')
+    removespace = request.POST.get('removespace','off')
+    pdff= request.POST.get('pdf','off')
+    removeline= request.POST.get('removeline','off')
+    numberremover =request.POST.get('numberremover','off')
+    analyzed=djtext
+    #........................................
+    
+    #Remove Punctuations Function,////////////////////////////////
+    punctuations='''!()-[]{}:;'"\,.<>/?@#$%^&*`~|'''
+    if removepunc=='on':
+        analyzed=""
         for char in djtext:
             if char not in punctuations:
-                analyzed = analyzed + char
+                analyzed=analyzed+char
+                
+    #//////////////////////////////////////////////////////////
+    
+    
 
-        params = {'purpose':'Removed Punctuations', 'analyzed_text': analyzed}
-        djtext = analyzed
-
-    if(fullcaps=="on"):
-        analyzed = ""
-        for char in djtext:
-            analyzed = analyzed + char.upper()
-
-        params = {'purpose': 'Changed to Uppercase', 'analyzed_text': analyzed}
-        djtext = analyzed
-
-    if(extraspaceremover=="on"):
-        analyzed = ""
-        for index, char in enumerate(djtext):
-            # It is for if a extraspace is in the last of the string
-            if char == djtext[-1]:
-                    if not(djtext[index] == " "):
-                        analyzed = analyzed + char
-
-            elif not(djtext[index] == " " and djtext[index+1]==" "):                        
-                analyzed = analyzed + char
-
-        params = {'purpose': 'Removed NewLines', 'analyzed_text': analyzed}
-        djtext = analyzed
-
-    if (newlineremover == "on"):
-        analyzed = ""
-        for char in djtext:
-            if char != "\n" and char!="\r":
-                analyzed = analyzed + char
-
-        params = {'purpose': 'Removed NewLines', 'analyzed_text': analyzed}
+    #/////CapOn Function//////////////////////////////////
+    if capon=='on':
+        analyzed=analyzed.upper()
+        
+    #///////////////////////////////////////////////////
+    
+    #////////////////////Remove Line Function////////////////////////////////
+    if removeline=='on':
+        for char in analyzed:
+            if char=='\n':
+                analyzed=analyzed.replace("\n","")
+                
+    #///////////////////////////////////////////////////////////////
+    
+    #////////////////////Remove Spaces////////////////////////////
+    if removespace=='on':
+     
+        for char in analyzed:
+            if char==" ":
+                analyzed=analyzed.replace(" ",'')
+            elif char=='\n':
+                analyzed=analyzed.replace("\n",'')
+            elif char=="\t":
+                analyzed=analyzed.replace("\t",'')
+                # \t\n\r\t
+            elif char=='\r':
+                analyzed=analyzed.replace("\r",'')
     
     if (numberremover == "on"):
         analyzed = ""
@@ -66,15 +72,38 @@ def analyze(request):
         for char in djtext:
             if char not in numbers:
                 analyzed = analyzed + char
+                
+#///////////////////////////////////////////////////////////                
+# ///////////////////PDF...................................
+ 
+    # save FPDF() class into a
+    # variable pdf
+    if pdff== 'on':
+        pdf = FPDF()
         
-        params = {'purpose': 'Removed NewLines', 'analyzed_text': analyzed}
-        djtext = analyzed
+        # Add a page
+        pdf.add_page()
+        
+        # set style and size of font
+        # that you want in the pdf
+        pdf.set_font("Arial", size = 15)
+        
+        # add another cell
+        pdf.cell(300, 30, txt = analyzed,
+                ln = 100, align = 'C')
+        
+        # save the pdf with name .pdf
+        pdf.output("GFG.pdf") 
+        path='file:///D:/Django_harry/mysite/GFG.pdf'
 
-    
-    if(removepunc != "on" and newlineremover!="on" and extraspaceremover!="on" and fullcaps!="on" and numberremover != "on"):
-        return HttpResponse("please select any operation and try again")
+        #////////Open in new window with Generated Pdf
+        webbrowser.open_new(path)
+        #///////////////////////////////////////
+        
+    if (len(djtext)==0):
+        return HttpResponse('Where is Your Text ??<br>Enter Your Text Please <br> <a href="/"> Go Back To Main Page</a>')
+        
+    params={'purpose': 'Remove Punctuations','analyzed_text': analyzed}
+    return render(request, 'analyze.html',params)
 
-    return render(request, 'analyze.html', params)
 
-def about(request):
-    return render(request, 'about.html')
